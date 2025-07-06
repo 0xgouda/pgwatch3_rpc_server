@@ -2,13 +2,13 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"log"
 	"os"
 
 	"github.com/destrex271/pgwatch3_rpc_server/sinks"
-
-	"github.com/cybertec-postgresql/pgwatch/v3/api"
+	"github.com/destrex271/pgwatch3_rpc_server/sinks/pb"
 )
 
 type TextReceiver struct {
@@ -27,9 +27,9 @@ func NewTextReceiver(fullPath string) (tr *TextReceiver) {
 	return tr
 }
 
-func (r TextReceiver) UpdateMeasurements(msg *api.MeasurementEnvelope, logMsg *string) error {
-	if err := sinks.IsValidMeasurement(msg); err != nil {
-		return  err
+func (r TextReceiver) UpdateMeasurements(ctx context.Context, msg *pb.MeasurementEnvelope) (reply *pb.Reply, err error) {
+	if err = sinks.IsValidMeasurement(msg); err != nil {
+		return reply, err
 	}
 
 	// Write Metrics in a text file
@@ -37,9 +37,8 @@ func (r TextReceiver) UpdateMeasurements(msg *api.MeasurementEnvelope, logMsg *s
 	file, err := os.OpenFile(r.FullPath+"/"+fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 
 	if err != nil {
-		*logMsg = "Unable to open file. Error: " + err.Error()
-		log.Println(*logMsg)
-		return err
+		log.Println("Unable to open file. Error: " + err.Error())
+		return reply, err
 	}
 
 	writer := bufio.NewWriter(file)
@@ -55,7 +54,7 @@ func (r TextReceiver) UpdateMeasurements(msg *api.MeasurementEnvelope, logMsg *s
 
 	_, err = fmt.Fprintln(writer, output)
 	if err != nil {
-		return err
+		return reply, err
 	}
-	return writer.Flush()
+	return reply, writer.Flush()
 }
