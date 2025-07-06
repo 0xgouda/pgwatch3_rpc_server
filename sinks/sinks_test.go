@@ -89,9 +89,10 @@ func TestSyncMetricHandler(t *testing.T) {
 
 		data.DBName = "dummy"
 		data.MetricName = ""
+		data.Operation = pb.SyncOp_DeleteOp
 		reply, err = handler.SyncMetric(context.Background(), data)
 		assert.NoError(t, err)
-		assert.Equal(t, reply.GetLogmsg(), fmt.Sprintf("Receiver Synced %s %s %s", data.GetDBName(), data.GetMetricName(), "Add"))
+		assert.Equal(t, reply.GetLogmsg(), fmt.Sprintf("Receiver Synced %s %s %s", data.GetDBName(), data.GetMetricName(), "Delete"))
 	})
 
 	t.Run("Invalid Operation", func(t *testing.T) {
