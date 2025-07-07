@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/api"
 	"github.com/destrex271/pgwatch3_rpc_server/sinks"
+	"github.com/destrex271/pgwatch3_rpc_server/sinks/pb"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -90,26 +90,26 @@ func (r *S3Receiver) DBExists(bucketName string) (bool, error) {
 	return exists, err
 }
 
-func (r *S3Receiver) UpdateMeasurements(msg *api.MeasurementEnvelope, logMsg *string) error {
-	if err := sinks.IsValidMeasurement(msg); err != nil {
-		return  err
+func (r *S3Receiver) UpdateMeasurements(ctx context.Context, msg *pb.MeasurementEnvelope) (reply *pb.Reply, err error) {
+	if err = sinks.IsValidMeasurement(msg); err != nil {
+		return reply, err
 	}
 
 	exists, err := r.DBExists(msg.DBName)
 	if err != nil {
-		return err
+		return reply, err
 	}
 
 	if !exists {
 		err = r.AddDatabase(msg.DBName)
-		return err
+		return reply, err
 	}
 
 	for _, data := range msg.Data {
 		// Json data
 		jsonData, err := json.Marshal(data)
 		if err != nil {
-			return err
+			return reply, err
 		}
 
 		// Get buffer
@@ -130,9 +130,14 @@ func (r *S3Receiver) UpdateMeasurements(msg *api.MeasurementEnvelope, logMsg *st
 			Body:   buffer,
 		})
 		if err != nil {
-			return err
+			return reply, err
+		}
+
+		if ctx.Err() != nil {
+			reply.Logmsg = "context cancelled"
+			return reply, nil
 		}
 	}
 
-	return nil
+	return reply, nil
 }

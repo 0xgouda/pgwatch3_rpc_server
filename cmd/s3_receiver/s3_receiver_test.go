@@ -6,39 +6,25 @@ import (
 	"log"
 	"testing"
 
-	"github.com/cybertec-postgresql/pgwatch/v3/api"
+	
+	"github.com/destrex271/pgwatch3_rpc_server/sinks/pb"
 	"github.com/docker/go-connections/nat"
 	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/localstack"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
-func getMeasurementEnvelope() *api.MeasurementEnvelope {
-	measurement := make(map[string]any)
-	measurement["cpu"] = "0.001"
-	measurement["checkpointer"] = "1"
-	var measurements []map[string]any
-	measurements = append(measurements, measurement)
-
-	sql := make(map[int]string)
-	sql[12] = "select * from abc;"
-	metrics := &api.Metric{
-		SQLs:        sql,
-		InitSQL:     "select * from abc;",
-		NodeStatus:  "healthy",
-		StorageName: "teststore",
-		Description: "test metric",
+func getMeasurementEnvelope() *pb.MeasurementEnvelope {
+	st, err := structpb.NewStruct(map[string]any{"key": "val"})
+	if err != nil {
+		panic(err)
 	}
-
-	return &api.MeasurementEnvelope{
+	measurements := []*structpb.Struct{st}
+	return &pb.MeasurementEnvelope{
 		DBName:           "test",
-		SourceType:       "test_source",
 		MetricName:       "testMetric",
-		CustomTags:       nil,
 		Data:             measurements,
-		MetricDef:        *metrics,
-		RealDbname:       "test",
-		SystemIdentifier: "Identifier",
 	}
 }
 
@@ -167,8 +153,11 @@ func TestUpdateMeasurements(t *testing.T) {
 	assert.NotNil(t, client, "received nil instead of client")
 
 	msg := getMeasurementEnvelope()
-	logMsg := new(string)
-	err = client.UpdateMeasurements(msg, logMsg)
-
+	_, err = client.UpdateMeasurements(context.Background(), msg)
 	assert.Nil(t, err, "error encountered while updating measurements")
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	reply, _ := client.UpdateMeasurements(ctx, msg)
+	assert.Equal(t, reply.GetLogmsg(), "context cancelled")
 }
