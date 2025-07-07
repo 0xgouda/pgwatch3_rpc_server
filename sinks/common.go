@@ -27,6 +27,7 @@ func Listen(receiver pb.ReceiverServer, port string) error {
 	}
 	server := grpc.NewServer()
 	pb.RegisterReceiverServer(server, receiver)
+	log.Println("[INFO]: Registered Receiver")
 	// if no error it should never return
 	return server.Serve(lis)
 }
