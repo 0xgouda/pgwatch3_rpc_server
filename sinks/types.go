@@ -44,12 +44,12 @@ func (handler *SyncMetricHandler) SyncMetric(ctx context.Context, req *pb.SyncRe
 	}
 }
 
-func (handler SyncMetricHandler) GetSyncChannelContent() (*pb.SyncReq, bool) {
+func (handler *SyncMetricHandler) GetSyncChannelContent() (*pb.SyncReq, bool) {
 	content, ok := <-handler.syncChannel
 	return content, ok
 }
 
-func (handler SyncMetricHandler) HandleSyncMetric() {
+func (handler *SyncMetricHandler) HandleSyncMetric() {
 	for {
 		// default HandleSyncMetric = empty channel and do nothing
 		handler.GetSyncChannelContent()
