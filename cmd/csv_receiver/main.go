@@ -16,9 +16,11 @@ func main() {
 		log.Println("[ERROR]: No Port Specified")
 		return
 	}
-
 	server := NewCSVReceiver(*StorageFolder)
-	if err := sinks.Listen(server, *port); err != nil {
+
+	// if no error it should never return
+	err := sinks.Listen(server, *port)
+	if err != nil {
 		log.Fatal(err)
 	}
 }
