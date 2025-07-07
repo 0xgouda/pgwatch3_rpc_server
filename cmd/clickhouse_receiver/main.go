@@ -12,19 +12,14 @@ func main() {
 	port := flag.String("port", "-1", "Specify the port where you want your sink to receive the measurements on.")
 	flag.Parse()
 
-	if *port == "-1" {
-		log.Println("[ERROR]: No Port Specified")
-		return
-	}
+	User := os.Getenv("CLICKHOUSE_USER")
+	Password := os.Getenv("CLICKHOUSE_PASSWORD")
+	serverURI := os.Getenv("CLICKHOUSE_SERVER_URI")
+	DBName := os.Getenv("CLICKHOUSE_DB")
 
-	var server sinks.Receiver
-	user := os.Getenv("user")
-	password := os.Getenv("password")
-	serverURI := os.Getenv("server")
-	dbname := os.Getenv("dbname")
-	server, err := NewClickHouseReceiver(user, password, dbname, serverURI, false)
+	server, err := NewClickHouseReceiver(User, Password, DBName, serverURI, false)
 	if err != nil {
-		log.Fatal("[ERROR]: Unable to create Click house receiver: ", err)
+		log.Fatalf("Unable to create ClickHouse receiver: %v", err)
 	}
 
 	if err = sinks.Listen(server, *port); err != nil {
