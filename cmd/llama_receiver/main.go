@@ -23,7 +23,6 @@ func main() {
 		return
 	}
 
-	var server sinks.Receiver
 	server, err := NewLLamaReceiver(*serverURI, *pgURI, context.Background(), *batchSize)
 	if err != nil {
 		log.Fatal(err)
