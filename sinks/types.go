@@ -3,6 +3,7 @@ package sinks
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/destrex271/pgwatch3_rpc_server/sinks/pb"
@@ -10,8 +11,13 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// just some unlikely string for a DB name to avoid using maps of maps for DB+metric data
+var	dbMetricJoinStr = "¤¤¤" 
+
 type SyncMetricHandler struct {
 	syncChannel chan *pb.SyncReq
+	reqsCnt     map[string]int
+	reqsCntLock sync.Mutex
 	pb.UnimplementedReceiverServer
 }
 
@@ -19,11 +25,15 @@ func NewSyncMetricHandler(chanSize int) SyncMetricHandler {
 	if chanSize == 0 {
 		chanSize = 1024
 	}
-	return SyncMetricHandler{syncChannel: make(chan *pb.SyncReq, chanSize)}
+	return SyncMetricHandler{
+		syncChannel: make(chan *pb.SyncReq, chanSize),
+		reqsCnt: make(map[string]int),
+	}
 }
 
 func (handler *SyncMetricHandler) SyncMetric(ctx context.Context, req *pb.SyncReq) (*pb.Reply, error) {
-	if req.GetOperation() != pb.SyncOp_AddOp && req.GetOperation() != pb.SyncOp_DeleteOp {
+	operation := req.GetOperation()
+	if operation != pb.SyncOp_AddOp && operation != pb.SyncOp_DeleteOp {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid operation type")
 	}
 	// any SyncReq must specify DBName to add/remove it or metric from it
@@ -31,18 +41,37 @@ func (handler *SyncMetricHandler) SyncMetric(ctx context.Context, req *pb.SyncRe
 		return nil, status.Errorf(codes.InvalidArgument, "invalid sync request DBName can't be empty")
 	}
 
-	opName := "Add"
-	if req.GetOperation() == pb.SyncOp_DeleteOp {
-		opName = "Delete"
+	// handle concurrent add/delete operations 
+	// on the same source db from different pgwatch instances
+	dbMetricStr := req.GetDBName() + dbMetricJoinStr + req.GetMetricName()
+	handler.reqsCntLock.Lock()
+	defer handler.reqsCntLock.Unlock()
+
+	var shouldHandle bool
+	var toAdd int
+	if operation == pb.SyncOp_AddOp {
+		toAdd = 1
+		shouldHandle = (handler.reqsCnt[dbMetricStr] == 0)
+	} else {
+		toAdd = -1
+		shouldHandle = (handler.reqsCnt[dbMetricStr] == 1) 
+	}
+	handler.reqsCnt[dbMetricStr] += toAdd
+
+	if !shouldHandle {
+		return nil, nil
 	}
 
 	select {
 	case handler.syncChannel <- req:
-		reply := &pb.Reply{
-			Logmsg: fmt.Sprintf("gRPC Receiver Synced: DBName %s MetricName %s Operation %s", req.GetDBName(), req.GetMetricName(), opName),
+		opName := "Add"
+		if operation == pb.SyncOp_DeleteOp {
+			opName = "Delete"
 		}
-		return reply, nil
+		msg := fmt.Sprintf("gRPC Receiver Synced: DBName %s MetricName %s Operation %s", req.GetDBName(), req.GetMetricName(), opName)
+		return &pb.Reply{Logmsg: msg}, nil
 	case <-time.After(5 * time.Second):
+		handler.reqsCnt[dbMetricStr] -= toAdd
 		return nil, status.Errorf(codes.DeadlineExceeded, "timeout while trying to sync metric")
 	}
 }
