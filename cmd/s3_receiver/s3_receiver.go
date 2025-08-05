@@ -27,7 +27,7 @@ type S3Receiver struct {
 	S3Client  *s3.Client
 	S3Manager *manager.Uploader
 	Ctx       context.Context
-	sinks.SyncMetricHandler
+	*sinks.SyncMetricHandler
 }
 
 func NewS3Receiver(awsEndpoint string, awsRegion string, username string, passwd string) (*S3Receiver, error) {

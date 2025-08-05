@@ -31,7 +31,7 @@ const TestCert = "./rpc_tests_certs/server.crt"
 const TestPrivateKey = "./rpc_tests_certs/server.key"
 
 type Sink struct {
-	SyncMetricHandler
+	*SyncMetricHandler
 }
 
 func (s *Sink) UpdateMeasurements(ctx context.Context, msg *pb.MeasurementEnvelope) (*pb.Reply, error) {

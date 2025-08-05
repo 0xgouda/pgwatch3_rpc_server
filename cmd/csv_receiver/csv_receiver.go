@@ -12,7 +12,7 @@ import (
 
 type CSVReceiver struct {
 	FullPath string
-	sinks.SyncMetricHandler
+	*sinks.SyncMetricHandler
 }
 
 /*

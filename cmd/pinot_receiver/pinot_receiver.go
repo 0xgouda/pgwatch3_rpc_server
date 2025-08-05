@@ -25,7 +25,7 @@ type PinotReceiver struct {
 	TableName     string // Name of the table in Pinot
 	ConfigDir     string // Directory containing schema and table config
 	Client        *http.Client
-	sinks.SyncMetricHandler
+	*sinks.SyncMetricHandler
 }
 
 func NewPinotReceiver(controllerURL, tableName, configDir string) (*PinotReceiver, error) {

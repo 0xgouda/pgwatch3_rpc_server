@@ -17,7 +17,7 @@ import (
 
 type ClickHouseReceiver struct {
 	Conn driver.Conn
-	sinks.SyncMetricHandler
+	*sinks.SyncMetricHandler
 	Engine string
 }
 

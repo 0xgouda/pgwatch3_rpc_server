@@ -16,7 +16,7 @@ type KafkaProdReceiver struct {
 	conn_regisrty map[string]*kafka.Conn
 	uri           string
 	auto_add      bool
-	sinks.SyncMetricHandler
+	*sinks.SyncMetricHandler
 }
 
 // Handle Sync Metric Instructions

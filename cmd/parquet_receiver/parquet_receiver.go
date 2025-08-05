@@ -13,7 +13,7 @@ import (
 
 type ParquetReceiver struct {
 	bufferPath string
-	sinks.SyncMetricHandler
+	*sinks.SyncMetricHandler
 }
 
 type ParquetSchema struct {

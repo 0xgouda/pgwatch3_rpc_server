@@ -13,7 +13,7 @@ import (
 
 type TextReceiver struct {
 	FullPath string
-	sinks.SyncMetricHandler
+	*sinks.SyncMetricHandler
 }
 
 func NewTextReceiver(fullPath string) (tr *TextReceiver) {

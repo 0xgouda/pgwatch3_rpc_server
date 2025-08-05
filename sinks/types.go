@@ -21,11 +21,11 @@ type SyncMetricHandler struct {
 	pb.UnimplementedReceiverServer
 }
 
-func NewSyncMetricHandler(chanSize int) SyncMetricHandler {
+func NewSyncMetricHandler(chanSize int) *SyncMetricHandler {
 	if chanSize == 0 {
 		chanSize = 1024
 	}
-	return SyncMetricHandler{
+	return &SyncMetricHandler{
 		syncChannel: make(chan *pb.SyncReq, chanSize),
 		reqsCnt: make(map[string]int),
 	}

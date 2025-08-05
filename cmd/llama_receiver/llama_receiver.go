@@ -45,7 +45,7 @@ type LLamaReceiver struct {
 	mu sync.Mutex
 	MsCount   int
 	InsightsGenerationWg *sync.WaitGroup
-	sinks.SyncMetricHandler
+	*sinks.SyncMetricHandler
 }
 
 type MeasurementsData struct {
